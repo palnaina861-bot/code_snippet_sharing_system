@@ -1,12 +1,13 @@
 'use client';
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Code2, Copy, Terminal, Sparkles, Check } from 'lucide-react';
-
+import { Search, Code2, Copy, Terminal, Sparkles, Check, LogOut, UserCircle2, Plus } from 'lucide-react';
+import { useAuth } from './context/AuthContext';
 
 export default function HomePage() {
   const [copiedId, setCopiedId] = useState(null);
   const router = useRouter();
+  const { user, logout } = useAuth();
 
   const featuredSnippets = [
     {
@@ -49,6 +50,18 @@ async function main():
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  const handleCreateSnippet = () => {
+    if (user) {
+      router.push('/create-snippet');
+    } else {
+      router.push('/login?redirect=/create-snippet');
+    }
+  };
+
+  const handleLogout = () => {
+    logout();
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans">
       {/* Navigation */}
@@ -58,16 +71,61 @@ async function main():
             <Code2 className="h-8 w-8 text-indigo-500" />
             <span className="font-bold text-xl tracking-tight">SnippetHub</span>
           </div>
-          <div className="flex items-center space-x-4">
+
+          <div className="flex items-center space-x-3">
             <button className="text-slate-400 hover:text-white px-3 py-2 text-sm font-medium transition">
               Explore
             </button>
-            <button
-              onClick={() => router.push('/create-snippet')}
-              className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition shadow-lg shadow-indigo-500/20"
-            >
-              Create Snippet
-            </button>
+
+            {user ? (
+              /* ── Logged-in state ── */
+              <>
+                <button
+                  id="create-snippet-btn"
+                  onClick={handleCreateSnippet}
+                  className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition shadow-lg shadow-indigo-500/20"
+                >
+                  <Plus className="w-4 h-4" />
+                  Create Snippet
+                </button>
+
+                {/* User avatar / name */}
+                <div className="flex items-center gap-2 pl-1 border-l border-slate-700">
+                  <div className="w-8 h-8 rounded-full bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center">
+                    <UserCircle2 className="w-5 h-5 text-indigo-400" />
+                  </div>
+                  <span className="text-sm text-slate-300 font-medium hidden sm:block max-w-[120px] truncate">
+                    {user.name}
+                  </span>
+                  <button
+                    id="logout-btn"
+                    onClick={handleLogout}
+                    title="Logout"
+                    className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-lg transition"
+                  >
+                    <LogOut className="w-4 h-4" />
+                  </button>
+                </div>
+              </>
+            ) : (
+              /* ── Logged-out state ── */
+              <>
+                <button
+                  id="login-nav-btn"
+                  onClick={() => router.push('/login')}
+                  className="text-slate-300 hover:text-white px-4 py-2 text-sm font-medium transition"
+                >
+                  Sign In
+                </button>
+                <button
+                  id="signup-nav-btn"
+                  onClick={() => router.push('/signup')}
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition shadow-lg shadow-indigo-500/20"
+                >
+                  Get Started
+                </button>
+              </>
+            )}
           </div>
         </div>
       </nav>
@@ -83,6 +141,24 @@ async function main():
         <p className="max-w-2xl mx-auto text-lg text-slate-400 mb-8">
           An effortless platform for developers to store, discover, and share reusable code fragments with syntax highlighting and instant embedding.
         </p>
+
+        {/* Hero CTA */}
+        {!user && (
+          <div className="flex items-center justify-center gap-3 mb-10">
+            <button
+              onClick={() => router.push('/signup')}
+              className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl text-sm font-semibold transition shadow-lg shadow-indigo-500/20"
+            >
+              Start for free
+            </button>
+            <button
+              onClick={() => router.push('/login')}
+              className="text-slate-300 hover:text-white border border-slate-700 hover:border-slate-500 px-6 py-3 rounded-xl text-sm font-medium transition"
+            >
+              Sign in
+            </button>
+          </div>
+        )}
 
         {/* Search Bar */}
         <div className="max-w-xl mx-auto relative mb-12">
@@ -131,6 +207,25 @@ async function main():
             </div>
           ))}
         </div>
+
+        {/* Unauthenticated CTA at bottom */}
+        {!user && (
+          <div className="mt-12 text-center bg-slate-900/50 border border-slate-700/50 rounded-2xl p-10">
+            <div className="w-12 h-12 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center mx-auto mb-4">
+              <Code2 className="w-6 h-6 text-indigo-400" />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">Ready to share your code?</h3>
+            <p className="text-slate-400 text-sm mb-6 max-w-sm mx-auto">
+              Create a free account to publish, organize, and share your own code snippets with the world.
+            </p>
+            <button
+              onClick={() => router.push('/signup')}
+              className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-xl text-sm font-semibold transition shadow-lg shadow-indigo-500/20"
+            >
+              Create your free account
+            </button>
+          </div>
+        )}
       </section>
     </div>
   );

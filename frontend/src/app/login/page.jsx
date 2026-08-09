@@ -1,92 +1,185 @@
 'use client';
-import React from 'react'
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Code2, Mail, Lock, Eye, EyeOff, Loader2, AlertCircle } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
-const login = () => {
-  return (
-    <div className="bg-white border border-gray-200 rounded-xl shadow-2xs">
-  {/* Sign In */}
-  <div className="p-4 sm:p-7">
-    <div className="text-center">
-      <h3 id="hs-modal-signin-label" className="block text-2xl font-bold text-gray-800">Sign in</h3>
-      <p className="mt-2 text-sm text-gray-600">
-        Don't have an account yet?
-        <a className="text-blue-600 decoration-2 hover:underline focus:outline-hidden focus:underline font-medium" href="#">
-          Sign up here
-        </a>
-      </p>
-    </div>
+function LoginContent() {
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const { login, user } = useAuth();
 
-    <div className="mt-5">
-      <a className="w-full py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-lg bg-white border border-gray-200 text-gray-800 shadow-2xs hover:bg-gray-50 disabled:opacity-50 disabled:pointer-events-none focus:outline-hidden focus:bg-gray-50" href="#">
-        <svg className="w-4 h-auto" width="46" height="47" viewBox="0 0 46 47" fill="none">
-          <path d="M46 24.0287C46 22.09 45.8533 20.68 45.5013 19.2112H23.4694V27.9356H36.4069C36.1429 30.1094 34.7347 33.37 31.5957 35.5731L31.5663 35.8669L38.5191 41.2719L38.9885 41.3306C43.4477 37.2181 46 31.1669 46 24.0287Z" fill="#4285F4"/>
-          <path d="M23.4694 47C29.8061 47 35.1161 44.9144 39.0179 41.3012L31.625 35.5437C29.6301 36.9244 26.9898 37.8937 23.4987 37.8937C17.2793 37.8937 12.0281 33.7812 10.1505 28.1412L9.88649 28.1706L2.61097 33.7812L2.52296 34.0456C6.36608 41.7125 14.287 47 23.4694 47Z" fill="#34A853"/>
-          <path d="M10.1212 28.1413C9.62245 26.6725 9.32908 25.1156 9.32908 23.5C9.32908 21.8844 9.62245 20.3275 10.0918 18.8588V18.5356L2.75765 12.8369L2.52296 12.9544C0.909439 16.1269 0 19.7106 0 23.5C0 27.2894 0.909439 30.8731 2.49362 34.0456L10.1212 28.1413Z" fill="#FBBC05"/>
-          <path d="M23.4694 9.07688C27.8699 9.07688 30.8622 10.9863 32.5344 12.5725L39.1645 6.11C35.0867 2.32063 29.8061 0 23.4694 0C14.287 0 6.36607 5.2875 2.49362 12.9544L10.0918 18.8588C11.9987 13.1894 17.25 9.07688 23.4694 9.07688Z" fill="#EB4335"/>
-        </svg>
-        Sign in with Google
-      </a>
+    const [form, setForm] = useState({ email: '', password: '' });
+    const [showPassword, setShowPassword] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
 
-      <div className="py-3 flex items-center text-xs text-gray-400 uppercase before:flex-1 before:border-t before:border-gray-200 before:me-6 after:flex-1 after:border-t after:border-gray-200 after:ms-6">Or</div>
-    </div>
+    // If already logged in, redirect away
+    useEffect(() => {
+        if (user) {
+            const redirect = searchParams.get('redirect') || '/';
+            router.replace(redirect);
+        }
+    }, [user, router, searchParams]);
 
-      {/* Form */}
-      <form>
-        <div className="grid gap-y-4">
-          {/* Form Group */}
-          <div>
-            <label htmlFor="email" className="block text-sm mb-2 text-gray-800">Email address</label>
-            <div className="relative">
-              <input type="email" id="email" name="email" className="py-2.5 sm:py-3 px-4 block w-full bg-white border-gray-200 rounded-lg sm:text-sm text-gray-800 placeholder:text-gray-500 focus:border-blue-700 focus:ring-blue-700 disabled:opacity-50 disabled:pointer-events-none" required aria-describedby="email-error" />
-              <div className="hidden absolute inset-y-0 inset-e-0 pointer-events-none pe-3">
-                <svg className="size-5 text-red-500" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
-                  <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/>
-                </svg>
-              </div>
+    const handleChange = (e) => {
+        setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+        setError('');
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!form.email || !form.password) {
+            return setError('Email and password are required.');
+        }
+        setLoading(true);
+        setError('');
+        try {
+            const res = await fetch('http://localhost:5000/api/user/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: form.email, password: form.password }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.message || 'Login failed.');
+            login(data);
+            const redirect = searchParams.get('redirect') || '/';
+            router.push(redirect);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4 py-12">
+            {/* Background glow */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-3xl" />
             </div>
-            <p className="hidden text-xs text-red-600 mt-2" id="email-error">Please include a valid email address so we can get back to you</p>
-          </div>
-          {/* End Form Group */}
 
-          {/* Form Group */}
-          <div>
-            <div className="flex flex-wrap items-center gap-2">
-              <label htmlFor="password" className="block text-sm mb-2 text-gray-800">Password</label>
-            </div>
-            <div className="relative">
-              <input type="password" id="password" name="password" className="py-2.5 sm:py-3 px-4 block w-full bg-white border-gray-200 rounded-lg sm:text-sm text-gray-800 placeholder:text-gray-500 focus:border-blue-700 focus:ring-blue-700 disabled:opacity-50 disabled:pointer-events-none" required aria-describedby="password-error" />
-              <div className="hidden absolute inset-y-0 inset-e-0 pointer-events-none pe-3">
-                <svg className="size-5 text-red-500" width="16" height="16" fill="currentColor" viewBox="0 0 16 16" aria-hidden="true">
-                  <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM8 4a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 4zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"/>
-                </svg>
-              </div>
-            </div>
-            <p className="hidden text-xs text-red-600 mt-2" id="password-error">8+ characters required</p>
-          </div>
-          {/* End Form Group */}
+            <div className="relative w-full max-w-md">
+                {/* Logo */}
+                <div className="text-center mb-8">
+                    <button
+                        onClick={() => router.push('/')}
+                        className="inline-flex items-center gap-2 group"
+                    >
+                        <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/30 group-hover:bg-indigo-500 transition">
+                            <Code2 className="w-5 h-5 text-white" />
+                        </div>
+                        <span className="text-xl font-bold text-white tracking-tight">SnippetHub</span>
+                    </button>
+                    <h1 className="mt-6 text-3xl font-extrabold text-white">Welcome back</h1>
+                    <p className="mt-2 text-sm text-slate-400">Sign in to create and share your snippets</p>
+                </div>
 
-          {/* Checkbox */}
-          <div className="flex items-center">
-            <div className="flex">
-              <input id="checkbox" name="checkbox" type="checkbox" className="shrink-0 size-4 bg-transparent border-gray-300 rounded-sm shadow-2xs text-blue-600 focus:ring-0 focus:ring-offset-0 checked:bg-blue-600 checked:border-blue-600 disabled:opacity-50 disabled:pointer-events-none" />
-            </div>
-            <div className="ms-3">
-              <label htmlFor="checkbox" className="text-sm text-gray-800">
-                Remember me
-              </label>
-            </div>
-          </div>
-          {/* End Checkbox */}
+                {/* Card */}
+                <div className="bg-slate-900/70 backdrop-blur-xl border border-slate-700/60 rounded-2xl p-8 shadow-2xl shadow-black/40">
+                    <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+                        {/* Email */}
+                        <div>
+                            <label htmlFor="email" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                                Email Address
+                            </label>
+                            <div className="relative">
+                                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+                                <input
+                                    id="email"
+                                    name="email"
+                                    type="email"
+                                    autoComplete="email"
+                                    value={form.email}
+                                    onChange={handleChange}
+                                    placeholder="you@example.com"
+                                    className="w-full bg-slate-800/70 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                                    required
+                                />
+                            </div>
+                        </div>
 
-          <button type="submit" className="w-full py-3 px-4 inline-flex justify-center items-center gap-x-2 text-sm font-medium rounded-lg bg-blue-600 border border-transparent text-white hover:bg-blue-700 focus:outline-hidden focus:bg-blue-700 disabled:opacity-50 disabled:pointer-events-none">Sign in</button>
+                        {/* Password */}
+                        <div>
+                            <label htmlFor="password" className="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">
+                                Password
+                            </label>
+                            <div className="relative">
+                                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+                                <input
+                                    id="password"
+                                    name="password"
+                                    type={showPassword ? 'text' : 'password'}
+                                    autoComplete="current-password"
+                                    value={form.password}
+                                    onChange={handleChange}
+                                    placeholder="••••••••"
+                                    className="w-full bg-slate-800/70 border border-slate-700 rounded-xl pl-10 pr-12 py-3 text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+                                    required
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(v => !v)}
+                                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition"
+                                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                >
+                                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Error Banner */}
+                        {error && (
+                            <div className="flex items-center gap-2.5 bg-red-500/10 border border-red-500/30 text-red-400 text-sm px-4 py-3 rounded-xl">
+                                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                                {error}
+                            </div>
+                        )}
+
+                        {/* Submit */}
+                        <button
+                            type="submit"
+                            id="login-submit"
+                            disabled={loading}
+                            className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl text-sm transition shadow-lg shadow-indigo-500/20 mt-2"
+                        >
+                            {loading ? (
+                                <><Loader2 className="w-4 h-4 animate-spin" /> Signing in...</>
+                            ) : 'Sign In'}
+                        </button>
+                    </form>
+
+                    {/* Divider */}
+                    <div className="my-6 flex items-center gap-3">
+                        <div className="flex-1 h-px bg-slate-700" />
+                        <span className="text-xs text-slate-500 uppercase tracking-wider">or</span>
+                        <div className="flex-1 h-px bg-slate-700" />
+                    </div>
+
+                    {/* Sign up link */}
+                    <p className="text-center text-sm text-slate-400">
+                        Don&apos;t have an account?{' '}
+                        <button
+                            onClick={() => router.push('/signup')}
+                            className="text-indigo-400 hover:text-indigo-300 font-semibold transition"
+                        >
+                            Create one for free
+                        </button>
+                    </p>
+                </div>
+            </div>
         </div>
-      </form>
-      {/* End Form */}
-  </div>
-  {/* End Sign In */}
-
-</div>
-  )
+    );
 }
 
-export default login
+export default function LoginPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+                <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+            </div>
+        }>
+            <LoginContent />
+        </Suspense>
+    );
+}

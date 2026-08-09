@@ -1,8 +1,9 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Code2, ArrowLeft, Tag, Globe, Lock, FolderOpen, Loader2, CheckCircle } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 // Dynamically import Monaco to avoid SSR issues
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false });
@@ -15,6 +16,14 @@ const LANGUAGES = [
 
 export default function CreateSnippetPage() {
     const router = useRouter();
+    const { token, loading: authLoading } = useAuth();
+
+    // Auth guard — redirect unauthenticated users before rendering
+    useEffect(() => {
+        if (!authLoading && !token) {
+            router.replace('/login?redirect=/create-snippet');
+        }
+    }, [token, authLoading, router]);
 
     const [form, setForm] = useState({
         title: 'My Awesome Snippet',
@@ -76,6 +85,15 @@ export default function CreateSnippetPage() {
             setLoading(false);
         }
     };
+
+    // Show spinner while checking auth or redirecting
+    if (authLoading || !token) {
+        return (
+            <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+                <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-slate-950 text-slate-100 font-sans">
