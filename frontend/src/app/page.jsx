@@ -1,8 +1,12 @@
+'use client';
 import React, { useState } from 'react';
-import { Search, Code2, Share2, Copy, Terminal, Sparkles, Check } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Search, Code2, Copy, Terminal, Sparkles, Check } from 'lucide-react';
+
 
 export default function HomePage() {
   const [copiedId, setCopiedId] = useState(null);
+  const router = useRouter();
 
   const featuredSnippets = [
     {
@@ -58,7 +62,10 @@ async function main():
             <button className="text-slate-400 hover:text-white px-3 py-2 text-sm font-medium transition">
               Explore
             </button>
-            <button className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition shadow-lg shadow-indigo-500/20">
+            <button
+              onClick={() => router.push('/create-snippet')}
+              className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition shadow-lg shadow-indigo-500/20"
+            >
               Create Snippet
             </button>
           </div>
