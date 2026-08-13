@@ -63,7 +63,13 @@ router.get('/getall', async (req, res) => {
 
         if (language) query.language = language.toLowerCase();
         if (tag)      query.tags = { $in: [tag] };
-        if (search)   query.$text = { $search: search };
+        if (search) {
+            query.$or = [
+                { title: { $regex: search, $options: 'i' } },
+                { description: { $regex: search, $options: 'i' } },
+                { tags: { $in: [new RegExp(search, 'i')] } }
+            ];
+        }
 
         const skip = (parseInt(page) - 1) * parseInt(limit);
 

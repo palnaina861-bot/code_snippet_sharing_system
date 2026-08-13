@@ -58,7 +58,4 @@ const snippetSchema = new Schema({
     }
 }, { timestamps: true });
 
-// Text index for full-text search on title, description, and tags
-snippetSchema.index({ title: 'text', description: 'text', tags: 'text' });
-
-module.exports = model('snippets', snippetSchema);
+module.exports = model('snippetsnew', snippetSchema);
