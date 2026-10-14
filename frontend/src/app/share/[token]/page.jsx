@@ -28,7 +28,7 @@ export default function PublicSharePage() {
     if (!shareToken) return;
     const fetchSnippet = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/snippet/share/${shareToken}`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/snippet/share/${shareToken}`);
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Snippet not found');
         setSnippet(data.snippet);

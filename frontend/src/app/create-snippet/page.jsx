@@ -65,7 +65,7 @@ export default function CreateSnippetPage() {
                 isPublic: form.isPublic,
             };
 
-            const res = await fetch('http://localhost:5000/api/snippet/create', {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/snippet/create`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
